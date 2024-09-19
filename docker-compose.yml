@@ -1,0 +1,75 @@
+version: '3.5'
+services:
+  nginx-todo:
+    image: nginx:latest
+    container_name: nginx-todo
+    depends_on:
+      - todo_service
+    volumes:
+      - ./todo_service/static:/var/www/static
+      - ./web_servers/nginx_todo/nginx.conf:/etc/nginx/nginx.conf
+      - ./web_servers/nginx_todo/conf.d:/etc/nginx/conf.d
+    ports:
+      - "80:80"
+
+  todo_service:
+    build: ./todo_service/
+    container_name: todo_service
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./todo_service/configs/.env.example
+
+  todo_postgres:
+    image: postgres:13
+    container_name: todo_postgres
+    expose:
+      - "5432"
+    env_file:
+      - ./todo_service/configs/.env.example
+    volumes:
+      - /postgresql/todo_data:/var/lib/postgresql/data
+    depends_on:
+      - todo_service
+
+  nginx-comments:
+    image: nginx:latest
+    container_name: nginx-comments
+    depends_on:
+      - comments_service
+    volumes:
+      - ./web_servers/nginx_comments/nginx.conf:/etc/nginx/nginx.conf
+      - ./web_servers/nginx_comments/conf.d:/etc/nginx/conf.d
+    ports:
+      - "81:81"
+
+  comments_service:
+    build: ./comments_api/
+    container_name: comments_service
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./comments_api/config/.env.example
+    depends_on:
+      - todo_service
+
+  comments_postgres:
+    image: postgres:13
+    container_name: comments_postgres
+    expose:
+      - "5433"
+    env_file:
+      - ./comments_api/config/.env.example
+    volumes:
+      - /postgresql/comments_data:/var/lib/postgresql/data
+    depends_on:
+      - comments_service
+
+  comments_redis:
+    image: redis:latest
+    container_name: comments_redis
+    expose:
+      - "6479"
+    depends_on:
+      - comments_service
+      - comments_postgres
