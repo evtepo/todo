@@ -4,10 +4,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import BotCommand, CallbackQuery, Message
 from aiogram_dialog import DialogManager
 
-from keyboards.menu import get_menu
-from handlers.auth import login_into_account, register_account
-from handlers.task import get_tasks
-
 
 router = Router(name=__name__)
 
