@@ -26,9 +26,11 @@ class TagListAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        serializer = TagCreateSerializer(data=request.data)
+        data = request.data.copy()
+        serializer = TagCreateSerializer(data=data)
         if serializer.is_valid():
             tag = serializer.save()
+
             return Response(TagSerializer(tag).data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -91,7 +93,7 @@ class TaskDetailAPIView(APIViewMixin):
     def get(self, request, task_id, *args, **kwargs):
         task = self.get_object(task_id)
         if not request.user in task.users.all():
-            raise PermissionDenied("You do not have permission to delete this task.")
+            raise PermissionDenied("You do not have permission to view this task.")
 
         serializer = TaskSerializer(task)
 
@@ -100,11 +102,15 @@ class TaskDetailAPIView(APIViewMixin):
     def put(self, request, task_id, *args, **kwargs):
         task = self.get_object(task_id)
         if not request.user in task.users.all():
-            raise PermissionDenied("You do not have permission to delete this task.")
+            raise PermissionDenied("You do not have permission to update this task.")
 
         serializer = TaskSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            tag_ids = request.data.get('tags', [])
+            if tag_ids:
+                task.tags.set(tag_ids)
+
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
