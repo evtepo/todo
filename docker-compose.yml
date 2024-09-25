@@ -69,7 +69,24 @@ services:
     image: redis:latest
     container_name: comments_redis
     expose:
-      - "6479"
+      - "6379"
     depends_on:
       - comments_service
       - comments_postgres
+
+  bot_service:
+    build: ./bot/
+    env_file:
+      - ./bot/configs/.env.example
+    depends_on:
+      - bot_redis
+
+  bot_redis:
+    image: redis:latest
+    container_name: bot_redis
+    expose:
+      - "6379"
+    ports:
+      - "6380:6379"
+    env_file:
+      - ./bot/configs/.env.example
